@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+import os
+import argparse
+import subprocess
+import json
+
+script_dir = os.path.dirname(os.path.realpath(__file__))
+
+omit_dir = f"{script_dir}/../src/parser_package"
+path_to_dir = f"{omit_dir}/../src"
+omit = f"{path_to_dir}/*.py"
+
+os.chdir(f"{script_dir}/..")
+
+parser = argparse.ArgumentParser(description="Execute coverage command")
+
+parser.add_argument("--value", action="store_true", help="print coverage value and exit")
+
+args = parser.parse_args()
+
+
+if args.value:
+
+    subprocess.run("coverage run --branch -m nose2 test", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["coverage", "json"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    with open("coverage.json", "r") as coverage_file:
+        coverage_data = json.load(coverage_file)
+
+        percent_covered = coverage_data["totals"]["percent_covered_display"]
+
+    print(percent_covered)
+    
+else:
+    subprocess.run("coverage run --branch -m nose2 test", shell=True)
+    subprocess.run("coverage html --omit ", shell=True)
+    # subprocess.run("coverage html --omit=src/parser_package/ManualParsingGrammarParser.py, src/parser_package/ManualParsingGrammarListener.py", shell=True)
+
+    subprocess.run(
+        "coverage html --omit=src/parser_package/ManualParsingGrammarListener.py,src/parser_package/ManualParsingGrammarParser.py,test/test_shell_checking.py,test/test_shell.py,src/parser_package/ManualParsingGrammarLexer.py ", shell=True)
+    subprocess.run("cd htmlcov/ && python -m http.server", shell=True)
